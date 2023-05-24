@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/csv"
+	"fmt"
 	"github.com/JoniDG/transact-mail/internal/domain"
 	"github.com/JoniDG/transact-mail/internal/repository"
 	"log"
@@ -23,7 +24,17 @@ func NewFileService(repoEmail repository.EmailRepository) FileService {
 }
 
 func (c *fileService) HandlerFile(fileName string) error {
+	var transactions []*domain.UserTransaction
+	//Mapa para el conteo de transacciones por mes
+	transCountByMonth := make(map[string]int)
+
+	totalCredit := 0.0
+	totalDebit := 0.0
+	cantCredit := 0
+	cantDebit := 0
+
 	file, err := os.Open(fileName)
+
 	if err != nil {
 		return err
 	}
@@ -38,9 +49,23 @@ func (c *fileService) HandlerFile(fileName string) error {
 			log.Println(err)
 			continue
 		}
-		err = c.repoEmail.Send(transact)
+		month := transact.Date.Month().String()
+		transCountByMonth[month]++
+		if transact.IsCredit {
+			totalCredit += transact.Transaction
+			cantCredit += 1
+		}
+		if transact.IsDebit {
+			totalDebit -= transact.Transaction
+			cantDebit += 1
+		}
+		transactions = append(transactions, transact)
 	}
-	return nil
+	for month, count := range transCountByMonth {
+		fmt.Printf("Number of transactions in %s: %d\n", month, count)
+	}
+	err = c.repoEmail.Send(transactions, totalCredit, totalDebit, cantCredit, cantDebit)
+	return err
 }
 
 func ReadFile(file *os.File) (*[][]string, error) {
