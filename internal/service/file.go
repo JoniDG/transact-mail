@@ -1,12 +1,16 @@
 package service
 
 import (
+	"bytes"
 	"encoding/csv"
-	"fmt"
+	"github.com/JoniDG/transact-mail/internal/defines"
 	"github.com/JoniDG/transact-mail/internal/domain"
 	"github.com/JoniDG/transact-mail/internal/repository"
+	_ "github.com/joho/godotenv/autoload"
+	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 type FileService interface {
@@ -24,15 +28,11 @@ func NewFileService(repoEmail repository.EmailRepository) FileService {
 }
 
 func (c *fileService) HandlerFile(fileName string) error {
-	var transactions []*domain.UserTransaction
-	//Mapa para el conteo de transacciones por mes
-	transCountByMonth := make(map[string]int)
-
 	totalCredit := 0.0
 	totalDebit := 0.0
 	cantCredit := 0
 	cantDebit := 0
-
+	transCountByMonth := make(map[string]int)
 	file, err := os.Open(fileName)
 
 	if err != nil {
@@ -44,27 +44,44 @@ func (c *fileService) HandlerFile(fileName string) error {
 		return err
 	}
 	for _, row := range *rows {
-		transact, err := domain.RowFileToUserTransactions(row)
+		transaction, err := domain.RowFileToUserTransactions(row)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		month := transact.Date.Month().String()
+		month := transaction.Date.Month().String()
 		transCountByMonth[month]++
-		if transact.IsCredit {
-			totalCredit += transact.Transaction
+		if transaction.IsCredit {
+			totalCredit += transaction.Transaction
 			cantCredit += 1
 		}
-		if transact.IsDebit {
-			totalDebit -= transact.Transaction
+		if transaction.IsDebit {
+			totalDebit -= transaction.Transaction
 			cantDebit += 1
 		}
-		transactions = append(transactions, transact)
 	}
-	for month, count := range transCountByMonth {
-		fmt.Printf("Number of transactions in %s: %d\n", month, count)
+	emailData := domain.UserTransactionToEmail(totalCredit, totalDebit, cantCredit, cantDebit, transCountByMonth)
+	fp := filepath.Join("./templates/body.html")
+	t, err := template.ParseFiles(fp)
+	if err != nil {
+		return err
 	}
-	err = c.repoEmail.Send(transactions, totalCredit, totalDebit, cantCredit, cantDebit)
+	buf := new(bytes.Buffer)
+	err = t.Execute(buf, emailData)
+	if err != nil {
+		return err
+	}
+	email := domain.Email{
+		To: []string{os.Getenv(defines.EnvEmailTo)},
+		Body: domain.BodyMail{
+			Headers: "From: " + os.Getenv(defines.EnvEmailFrom) + "\n" +
+				"To: " + os.Getenv(defines.EnvEmailTo) + "\n" +
+				defines.SubjectEmail + "\n" +
+				defines.Mime + "\r\n",
+			Message: buf.String(),
+		},
+	}
+	err = c.repoEmail.Send(email)
 	return err
 }
 

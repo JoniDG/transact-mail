@@ -27,7 +27,7 @@ func RowFileToUserTransactions(row []string) (*UserTransaction, error) {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(row[1])
+
 	if strings.Contains(row[2], "+") {
 		amountStr = strings.TrimPrefix(row[2], "+")
 		isCredit = true

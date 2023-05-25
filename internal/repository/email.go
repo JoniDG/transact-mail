@@ -1,13 +1,15 @@
 package repository
 
 import (
-	"fmt"
+	"github.com/JoniDG/transact-mail/internal/defines"
 	"github.com/JoniDG/transact-mail/internal/domain"
+	"log"
 	"net/smtp"
+	"os"
 )
 
 type EmailRepository interface {
-	Send(transactions []*domain.UserTransaction, totalCredit float64, totalDebit float64, cantCredit int, cantDebit int) error
+	Send(email domain.Email) error
 }
 
 type emailRepository struct {
@@ -22,11 +24,13 @@ func NewEmailRepository(auth smtp.Auth) EmailRepository {
 	}
 }
 
-func (r *emailRepository) Send(transactions []*domain.UserTransaction, totalCredit float64, totalDebit float64, cantCredit int, cantDebit int) error {
-	fmt.Printf("Total Balance: %.2f\n", totalCredit+totalDebit)
-	averageCredit := totalCredit / float64(cantCredit)
-	averageDebit := totalDebit / float64(cantDebit)
-	fmt.Printf("Average Debit Amount: %.2f\n", averageDebit)
-	fmt.Printf("Average Credit Amount: %.2f\n", averageCredit)
+func (r *emailRepository) Send(email domain.Email) error {
+	addr := os.Getenv(defines.EnvEmailHost) + ":" + os.Getenv(defines.EnvEmailPort)
+	body := []byte(email.Body.Headers + email.Body.Message)
+	err := smtp.SendMail(addr, r.auth, os.Getenv(defines.EnvSenderUser), email.To, body)
+	if err != nil {
+		return err
+	}
+	log.Println("Email Enviado")
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/JoniDG/transact-mail/internal/controller"
 	"github.com/JoniDG/transact-mail/internal/repository"
 	"github.com/JoniDG/transact-mail/internal/service"
+	_ "github.com/joho/godotenv/autoload"
 	"log"
 	"net/smtp"
 	"os"
