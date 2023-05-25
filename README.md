@@ -8,7 +8,7 @@ Project in charge of reading the .csv file with user transactions; send the tran
    docker build -t transact-mail .
 
 2. Run image
-   docker run -d --name postgres-transactions -e POSTGRES_PASSWORD=pass
+   docker run -d --name postgres-transactions -e POSTGRES_PASSWORD=pass\
    docker run -d --name transact-mail\
    -e EMAIL_HOST=host.email.com
    -e EMAIL_PORT=port
