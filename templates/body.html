@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<div style="margin: 0 auto; text-align: center;background-color: lime;">
+    <p>Total Balance is: {{.TotalBalance}}</p>
+    {{range $month, $value := .MonthTransactions}}
+        <p>Number of transactions in {{ $month }}: {{ $value }}</p>
+    {{end}}
+    <p>Average debit amount: {{.AverageDebit}}</p>
+    <p>Average credit amount: {{.AverageCredit}}</p>
+</div>
+<img src="https://blog.storicard.com/wp-content/uploads/2019/07/Stori-horizontal-11.jpg" alt="Logo de Stori">
+</body>
+</html>
