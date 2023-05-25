@@ -1,10 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/JoniDG/transact-mail/internal/controller"
+	"github.com/JoniDG/transact-mail/internal/defines"
 	"github.com/JoniDG/transact-mail/internal/repository"
 	"github.com/JoniDG/transact-mail/internal/service"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/joho/godotenv/autoload"
+	_ "github.com/lib/pq"
 	"log"
 	"net/smtp"
 	"os"
@@ -18,11 +22,21 @@ func main() {
 	host := os.Getenv("EMAIL_HOST")
 	auth := smtp.PlainAuth("", from, password, host)
 
+	postgresURI := fmt.Sprintf("postgres://%s:%s@%s:%s/postgres?sslmode=disable",
+		os.Getenv(defines.EnvPostgresUser),
+		os.Getenv(defines.EnvPostgresPassword),
+		os.Getenv(defines.EnvPostgresHost),
+		os.Getenv(defines.EnvPostgresPort),
+	)
+	db, err := sqlx.Open("postgres", postgresURI)
+	if err != nil {
+		log.Panic(err)
+	}
 	// Repositories init
 	emailRepo := repository.NewEmailRepository(auth)
-
+	transactionRepo := repository.NewTransactionRepository(db)
 	// Services init
-	svc := service.NewFileService(emailRepo)
+	svc := service.NewFileService(emailRepo, transactionRepo)
 
 	// Controllers init
 	ctrl := controller.NewFileController(svc)

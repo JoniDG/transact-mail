@@ -18,12 +18,14 @@ type FileService interface {
 }
 
 type fileService struct {
-	repoEmail repository.EmailRepository
+	repoEmail       repository.EmailRepository
+	repoTransaction repository.TransactionRepository
 }
 
-func NewFileService(repoEmail repository.EmailRepository) FileService {
+func NewFileService(repoEmail repository.EmailRepository, transactionRepo repository.TransactionRepository) FileService {
 	return &fileService{
-		repoEmail: repoEmail,
+		repoEmail:       repoEmail,
+		repoTransaction: transactionRepo,
 	}
 }
 
@@ -48,6 +50,10 @@ func (c *fileService) HandlerFile(fileName string) error {
 		if err != nil {
 			log.Println(err)
 			continue
+		}
+		err = c.repoTransaction.Create(transaction.ToEntity())
+		if err != nil {
+			log.Println(err)
 		}
 		month := transaction.Date.Month().String()
 		transCountByMonth[month]++
