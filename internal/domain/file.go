@@ -8,11 +8,17 @@ import (
 )
 
 type UserTransaction struct {
-	ID          int64     `db:"id"`
-	Date        time.Time `db:"name"`
+	ID          int64
+	Date        time.Time
 	Transaction float64
 	IsCredit    bool
 	IsDebit     bool
+}
+
+type UserTransactionEntity struct {
+	ID          int64   `db:"id"`
+	Date        string  `db:"date"`
+	Transaction float64 `db:"transaction"`
 }
 
 func RowFileToUserTransactions(row []string) (*UserTransaction, error) {
@@ -46,4 +52,12 @@ func RowFileToUserTransactions(row []string) (*UserTransaction, error) {
 		IsDebit:     isDebit,
 		Transaction: transaction,
 	}, nil
+}
+
+func (ut *UserTransaction) ToEntity() *UserTransactionEntity {
+	return &UserTransactionEntity{
+		ID:          ut.ID,
+		Date:        ut.Date.Format("02/01"),
+		Transaction: ut.Transaction,
+	}
 }
